@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- leaflet css link  -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+
+    <title>Web-GIS with GeoServer and Leaflet</title>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        #map {
+            width: 100%;
+            height: 100vh;
+        }
+
+        #legend {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            /* Memindahkan legenda ke sebelah kiri */
+            background: white;
+            padding: 10px;
+            border: 1px solid black;
+            z-index: 1000;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            /* Membagi menjadi dua kolom */
+            gap: 5px;
+            max-height: 200px;
+            /* Membatasi tinggi legenda */
+            overflow-y: auto;
+            /* Menambahkan scroll vertikal jika konten terlalu panjang */
+        }
+
+        #legend h4 {
+            grid-column: 1 / span 2;
+            /* Membuat judul berada di tengah dengan memanjang ke dua kolom */
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="map"></div>
+
+    <!-- Elemen untuk Legenda -->
+    <div id="legend">
+        <h4>Legenda</h4>
+        <img src="http://localhost:8080/geoserver/ows?service=WMS&version=1.1.0&request=GetLegendGraphic&layer=pg_web:DIY&style=kecstyle&format=image/png"
+            alt="Kabupaten Jateng DIY">
+    </div>
+
+    <!-- leaflet js link  -->
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="lib/L.Geoserver.js"></script>
+
+    <script>
+        // Inisialisasi peta dengan view awal
+        var map = L.map("map").setView([-7.677567, 110.406899], 12);
+
+        // Tambahkan layer OpenStreetMap sebagai base map
+        var osm = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        });
+        osm.addTo(map);
+
+        // Fungsi untuk menambahkan layer WMS dari GeoServer
+        function addGeoServerLayer(baseUrl, layerName, layerTitle) {
+            return L.tileLayer.wms(baseUrl, {
+                layers: layerName,
+                format: "image/png",
+                transparent: true,
+                attribution: "GeoServer",
+            });
+        }
+
+        // Layer GeoServer
+        var batasDesa = addGeoServerLayer(
+            "http://localhost:8080/geoserver/wms",
+            "pg_web:DIY",
+            "Batas Administrasi Desa"
+        );
+        batasDesa.addTo(map);
+
+        var jalanKabupaten = addGeoServerLayer(
+            "https://geoportal.slemankab.go.id/geoserver/wms",
+            "geonode:jalan_kabupaten_sleman_2023",
+            "Jalan Kabupaten Sleman"
+        );
+        jalanKabupaten.addTo(map);
+
+        var penduduk = addGeoServerLayer(
+            "http://localhost:8080/geoserver/wms",
+            "pgwbx:penduduk_sleman",
+            "Penduduk Sleman"
+        );
+
+        var kabupatenJatengDIY = addGeoServerLayer(
+            "http://localhost:8080/geoserver/wms",
+            "pgwbx:Kabupaten_Jateng_DIY",
+            "Kabupaten Jateng DIY"
+        );
+
+        // Kontrol layer
+        var baseMaps = {
+            "OpenStreetMap": osm,
+        };
+
+        var overlayMaps = {
+            "Batas Administrasi Desa": batasDesa,
+            "Jalan Kabupaten Sleman": jalanKabupaten,
+            "Penduduk Sleman": penduduk,
+            "Kabupaten Jateng DIY": kabupatenJatengDIY,
+        };
+
+        // Tambahkan kontrol layer ke peta
+        L.control.layers(baseMaps, overlayMaps).addTo(map);
+        
+    </script>
+
+</body>
+
+</html>
